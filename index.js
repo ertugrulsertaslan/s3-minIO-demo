@@ -40,7 +40,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 
   const params = {
-    Bucket: "my-bucket", // MinIO bucket name
+    Bucket: "YOUR_BUCKET_NAME", // MinIO bucket name
     Key: req.file.originalname, // Name of the file to upload
     Body: req.file.buffer, // File content to upload
     ContentType: req.file.mimetype, // MIME type of the file
@@ -59,7 +59,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
 app.get("/signed-url", async (req, res) => {
   const params = {
-    Bucket: "my-bucket",
+    Bucket: "YOUR_BUCKET_NAME",
     Key: req.query.file, // The name of the file you want to get the URL for
   };
 
