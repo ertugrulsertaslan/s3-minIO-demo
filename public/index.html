@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MinIO File Upload</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      h1 {
+        text-align: center;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .input-group {
+        margin-bottom: 20px;
+      }
+      .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      .input-group input {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .input-group button {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        background-color: #28a745;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+      }
+      .input-group button:hover {
+        background-color: #218838;
+      }
+      .message {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      .message.success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Upload File to MinIO</h1>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="input-group">
+          <label for="file">Choose File</label>
+          <input type="file" id="file" name="file" required />
+        </div>
+        <div class="input-group">
+          <button type="submit">Upload File</button>
+        </div>
+      </form>
+
+      <div id="message" class="message"></div>
+
+      <h2>Get Signed URL</h2>
+      <div class="input-group">
+        <label for="fileName">Enter File Name</label>
+        <input
+          type="text"
+          id="fileName"
+          name="fileName"
+          placeholder="Enter file name"
+          required
+        />
+      </div>
+      <div class="input-group">
+        <button id="getSignedUrl">Get Signed URL</button>
+      </div>
+      <div id="signedUrlMessage" class="message"></div>
+    </div>
+
+    <script>
+      const uploadForm = document.getElementById("uploadForm");
+      const messageBox = document.getElementById("message");
+      const getSignedUrlButton = document.getElementById("getSignedUrl");
+      const signedUrlMessageBox = document.getElementById("signedUrlMessage");
+
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(uploadForm);
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.text();
+
+        if (response.ok) {
+          messageBox.textContent = "File uploaded successfully!";
+          messageBox.classList.remove("error");
+          messageBox.classList.add("success");
+        } else {
+          messageBox.textContent = result;
+          messageBox.classList.remove("success");
+          messageBox.classList.add("error");
+        }
+      });
+
+      getSignedUrlButton.addEventListener("click", async () => {
+        const fileName = document.getElementById("fileName").value;
+
+        if (!fileName) {
+          signedUrlMessageBox.textContent = "Please enter a file name.";
+          signedUrlMessageBox.classList.remove("success");
+          signedUrlMessageBox.classList.add("error");
+          return;
+        }
+
+        const response = await fetch(`/signed-url?file=${fileName}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          signedUrlMessageBox.textContent = `Signed URL: ${data.url}`;
+          signedUrlMessageBox.classList.remove("error");
+          signedUrlMessageBox.classList.add("success");
+        } else {
+          signedUrlMessageBox.textContent = "Failed to generate signed URL.";
+          signedUrlMessageBox.classList.remove("success");
+          signedUrlMessageBox.classList.add("error");
+        }
+      });
+    </script>
+  </body>
+</html>
