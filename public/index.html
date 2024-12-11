@@ -75,84 +75,66 @@
   <body>
     <div class="container">
       <h1>Upload File to MinIO</h1>
-      <form id="uploadForm" enctype="multipart/form-data">
-        <div class="input-group">
-          <label for="file">Choose File</label>
-          <input type="file" id="file" name="file" required />
-        </div>
-        <div class="input-group">
-          <button type="submit">Upload File</button>
-        </div>
-      </form>
-
+      <div class="input-group">
+        <label for="file">Choose File</label>
+        <input type="file" id="file" name="file" required />
+      </div>
+      <div class="input-group">
+        <button id="uploadFile">Upload File</button>
+      </div>
       <div id="message" class="message"></div>
 
-      <h2>Get Signed URL</h2>
-      <div class="input-group">
-        <label for="fileName">Enter File Name</label>
-        <input
-          type="text"
-          id="fileName"
-          name="fileName"
-          placeholder="Enter file name"
-          required
-        />
-      </div>
-      <div class="input-group">
-        <button id="getSignedUrl">Get Signed URL</button>
-      </div>
       <div id="signedUrlMessage" class="message"></div>
     </div>
 
     <script>
-      const uploadForm = document.getElementById("uploadForm");
       const messageBox = document.getElementById("message");
-      const getSignedUrlButton = document.getElementById("getSignedUrl");
       const signedUrlMessageBox = document.getElementById("signedUrlMessage");
+      const uploadFileButton = document.getElementById("uploadFile");
+      const fileInput = document.getElementById("file");
 
-      uploadForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+      // Helper to display messages
+      const displayMessage = (box, message, isSuccess = true) => {
+        box.textContent = message;
+        box.classList.remove("success", "error");
+        box.classList.add(isSuccess ? "success" : "error");
+      };
 
-        const formData = new FormData(uploadForm);
-        const response = await fetch("/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const result = await response.text();
-
-        if (response.ok) {
-          messageBox.textContent = "File uploaded successfully!";
-          messageBox.classList.remove("error");
-          messageBox.classList.add("success");
-        } else {
-          messageBox.textContent = result;
-          messageBox.classList.remove("success");
-          messageBox.classList.add("error");
-        }
-      });
-
-      getSignedUrlButton.addEventListener("click", async () => {
-        const fileName = document.getElementById("fileName").value;
-
-        if (!fileName) {
-          signedUrlMessageBox.textContent = "Please enter a file name.";
-          signedUrlMessageBox.classList.remove("success");
-          signedUrlMessageBox.classList.add("error");
+      // Handle file upload via signed URL
+      uploadFileButton.addEventListener("click", async () => {
+        const file = fileInput.files[0];
+        const fileName = file.name;
+        const contentType = file.type;
+        if (!file) {
+          displayMessage(messageBox, "Please choose a file to upload.", false);
           return;
         }
 
-        const response = await fetch(`/signed-url?file=${fileName}`);
-        const data = await response.json();
+        try {
+          // Step 1: Get signed URL from backend
+          const response = await fetch(
+            `/signed-url?fileName=${encodeURIComponent(
+              file.name
+            )}&contentType=${encodeURIComponent(file.type)}`
+          );
+          if (!response.ok) throw new Error("Failed to generate signed URL");
 
-        if (response.ok) {
-          signedUrlMessageBox.textContent = `Signed URL: ${data.url}`;
-          signedUrlMessageBox.classList.remove("error");
-          signedUrlMessageBox.classList.add("success");
-        } else {
-          signedUrlMessageBox.textContent = "Failed to generate signed URL.";
-          signedUrlMessageBox.classList.remove("success");
-          signedUrlMessageBox.classList.add("error");
+          const { signedUrl } = await response.json();
+          // Step 2: Upload file to MinIO/S3 using the signed URL
+          const uploadResponse = await fetch(signedUrl, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": file.type,
+            },
+          });
+
+          if (!uploadResponse.ok) throw new Error("Failed to upload file");
+
+          displayMessage(messageBox, "File uploaded successfully!");
+          displayMessage(signedUrlMessageBox, `Signed URL: ${signedUrl}`);
+        } catch (error) {
+          displayMessage(messageBox, error.message, false);
         }
       });
     </script>
