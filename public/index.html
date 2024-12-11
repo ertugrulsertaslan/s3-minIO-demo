@@ -31,7 +31,7 @@
         font-weight: bold;
       }
       .input-group input {
-        width: 100%;
+        width: 95%;
         padding: 10px;
         font-size: 16px;
         border: 1px solid #ccc;
@@ -83,12 +83,13 @@
         <button id="uploadFile">Upload File</button>
       </div>
       <div id="message" class="message"></div>
-
+      <p id="signerUrlTitle" class="message"></p>
       <div id="signedUrlMessage" class="message"></div>
     </div>
 
     <script>
       const messageBox = document.getElementById("message");
+      const signerUrlTitle = document.getElementById("signerUrlTitle");
       const signedUrlMessageBox = document.getElementById("signedUrlMessage");
       const uploadFileButton = document.getElementById("uploadFile");
       const fileInput = document.getElementById("file");
@@ -115,11 +116,11 @@
           const response = await fetch(
             `/signed-url?fileName=${encodeURIComponent(
               file.name
-            )}&contentType=${encodeURIComponent(file.type)}`
+            )}&contentType=${encodeURIComponent(file.type)}&action=upload`
           );
           if (!response.ok) throw new Error("Failed to generate signed URL");
 
-          const { signedUrl } = await response.json();
+          const { signedUrl, signedUrlGet } = await response.json();
           // Step 2: Upload file to MinIO/S3 using the signed URL
           const uploadResponse = await fetch(signedUrl, {
             method: "PUT",
@@ -132,7 +133,21 @@
           if (!uploadResponse.ok) throw new Error("Failed to upload file");
 
           displayMessage(messageBox, "File uploaded successfully!");
-          displayMessage(signedUrlMessageBox, `Signed URL: ${signedUrl}`);
+          displayMessage(
+            signerUrlTitle,
+            "Click the URL below to view the file ⬇️"
+          );
+
+          const linkElement = document.createElement("a");
+          linkElement.href = signedUrlGet;
+          linkElement.textContent = "Click here to view the file";
+          linkElement.target = "_blank";
+          signedUrlMessageBox.innerHTML = "";
+          signedUrlMessageBox.appendChild(linkElement);
+
+          const signedUrlTextElement = document.createElement("p");
+          signedUrlTextElement.textContent = `Signed URL: ${signedUrlGet}`;
+          signedUrlMessageBox.appendChild(signedUrlTextElement);
         } catch (error) {
           displayMessage(messageBox, error.message, false);
         }
