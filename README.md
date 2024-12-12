@@ -88,3 +88,20 @@ This Express.js application demonstrates the following key functionalities:
     npm i && node index.js
 ```
 after running scripts go to http://localhost:3000 with your browser to use the app. 🌐
+
+## 3. Setting Up the .env File ⚙️
+    
+1. **Creating the .env File:** 📝
+   - Start by copying the `.env.example` file and creating a new file named `.env`.
+   - Make sure to fill in the contents of the `.env` file.
+
+
+2. **Defining Environment Variables:** 🔧
+
+ - In the `.env` file, define the following variables for your MinIO configuration:
+
+   ```sh
+      ACCESS_KEY =  YOUR_ACCESS_KEY
+      SECRET_KEY = YOUR_SECRET_KEY
+      BUCKET_NAME = YOUR_BUCKET_NAME
+   ```
